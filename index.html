@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#1f5fbf"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>سامانه نامه‌های اداری</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f4f5f7;--card:#fff;--tx:#1d2330;--mut:#667085;--bd:#d9dde5;--ac:#1f5fbf;--acx:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--card:#1e222b;--tx:#e8ebf1;--mut:#9aa3b2;--bd:#343a46;--ac:#6ea1f5;--acx:#0d1320}}
+:root[data-theme="dark"]{--bg:#14171d;--card:#1e222b;--tx:#e8ebf1;--mut:#9aa3b2;--bd:#343a46;--ac:#6ea1f5;--acx:#0d1320}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.8 Vazirmatn,Tahoma,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:14px}
+h1{font-size:20px;margin:6px 0 12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--mut);margin:8px 0 2px}
+input,textarea{width:100%;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px}
+textarea{min-height:140px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.row{grid-template-columns:1fr}}
+button{font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;padding:6px 12px;cursor:pointer}
+button.p{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}
+tr.sel{background:color-mix(in srgb,var(--ac) 15%,transparent)}
+tr{cursor:pointer}
+.sheetwrap{overflow-x:auto;padding:6px 0}
+/* A4 sheet: letter is always black on white */
+.sheet{width:210mm;min-height:297mm;background:#fff;color:#000;margin:0 auto;padding:18mm 20mm;box-shadow:0 2px 10px #0003;font-size:14pt;line-height:2;position:relative}
+.sheet .bis{text-align:center;font-weight:700;font-size:15pt}
+.sheet .meta{overflow:hidden;font-size:12pt;line-height:1.9;margin-top:6px}
+.sheet .meta div{float:left;clear:both;direction:rtl;text-align:right;min-width:48mm}
+.sheet .to{clear:both;padding-top:10mm;font-weight:700}
+.sheet .body{white-space:pre-wrap;text-align:justify;margin-top:6mm}
+.sheet .thx{margin-top:10mm;text-align:left;padding-left:22mm}
+.sheet .snd{margin-top:0;text-align:left;padding-left:22mm;font-weight:700}
+.hide{display:none}
+@page{size:A4;margin:0}
+@media print{
+ body{background:#fff}.wrap>*:not(#view){display:none!important}.wrap{padding:0;max-width:none}
+ #view .noprint{display:none!important}.sheetwrap{padding:0;overflow:visible}
+ .sheet{box-shadow:none;margin:0}
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script></head><body><div class="wrap">
+<h1>✉️ سامانه نامه‌های اداری</h1>
+
+<div class="card" id="formCard">
+ <b id="ftitle">نامه جدید</b>
+ <label>گیرنده نامه *</label><input id="to">
+ <label>سمت گیرنده *</label><input id="pos">
+ <div class="row">
+  <div><label>تاریخ نامه *</label><input id="date"></div>
+  <div><label>شماره نامه (اختیاری)</label><input id="no"></div>
+ </div>
+ <label>پیوست (اختیاری)</label><input id="att">
+ <label>متن نامه * (عبارت «با سلام» در ابتدا افزوده می‌شود)</label><textarea id="body"></textarea>
+ <label>فرستنده نامه *</label><input id="from">
+ <div class="bar">
+  <button class="p" id="save">ذخیره نامه</button>
+  <button id="reset">نامه جدید / لغو ویرایش</button>
+ </div>
+ <div id="msg" style="color:var(--mut);font-size:13px;margin-top:6px"></div>
+</div>
+
+<div class="card">
+ <b>بانک نامه‌ها</b>
+ <div class="tw"><table><thead><tr><th>ردیف</th><th>شماره نامه</th><th>تاریخ</th><th>گیرنده</th><th>فرستنده</th></tr></thead><tbody id="rows"></tbody></table></div>
+ <div id="empty" style="color:var(--mut);margin-top:8px">هنوز نامه‌ای ثبت نشده است.</div>
+ <div class="bar">
+  <button class="p" id="bView" disabled>مشاهده نامه</button>
+  <button id="bEdit" disabled>ویرایش</button>
+  <button id="bDel" disabled>حذف</button>
+ </div>
+</div>
+
+<div id="view" class="hide">
+ <div class="bar noprint" style="margin:0 0 8px">
+  <button class="p" id="bPrint">چاپ / ذخیره PDF (A4)</button>
+  <button class="p" id="bShare">اشتراک‌گذاری PDF</button>
+  <button id="bDl">دانلود PDF</button>
+  <button id="bClose">بستن</button>
+  <span id="pmsg" style="color:var(--mut);font-size:13px;align-self:center"></span>
+ </div>
+ <div class="sheetwrap"><div class="sheet" id="sheet"></div></div>
+</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const fa=n=>String(n).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let db=null,col=null,letters=[],sel=null,editId=null;
+function today(){try{return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit',numberingSystem:'arabext'}).format(new Date()).replace(/[\u06F0-\u06F9]/g,x=>x).split('/').join('/');}catch(e){return ''}}
+function say(t){$('msg').textContent=t;}
+function render(){
+ letters.sort((a,b)=>a.seq-b.seq);
+ $('rows').innerHTML=letters.map(l=>`<tr data-id="${l.id}" class="${l.id===sel?'sel':''}"><td>${fa(l.seq)}</td><td>${esc(l.no)||'—'}</td><td>${esc(l.date)}</td><td>${esc(l.to)}</td><td>${esc(l.from)}</td></tr>`).join('');
+ $('empty').classList.toggle('hide',letters.length>0);
+ ['bView','bEdit','bDel'].forEach(i=>$(i).disabled=!sel);
+}
+$('rows').onclick=e=>{const tr=e.target.closest('tr');if(!tr)return;sel=tr.dataset.id;render()};
+function get(){return letters.find(l=>l.id===sel)}
+function resetForm(){editId=null;['to','pos','no','att','body','from'].forEach(i=>$(i).value='');$('date').value=today();$('ftitle').textContent='نامه جدید';say('')}
+async function save(){
+ const d={to:$('to').value.trim(),pos:$('pos').value.trim(),date:$('date').value.trim(),no:$('no').value.trim(),att:$('att').value.trim(),body:$('body').value.trim(),from:$('from').value.trim()};
+ if(!d.to||!d.pos||!d.date||!d.body||!d.from){say('لطفاً فیلدهای ستاره‌دار را کامل کنید.');return}
+ try{
+  if(editId){const old=letters.find(l=>l.id===editId);d.seq=old.seq;d.id=editId}
+  else{d.seq=letters.reduce((m,l)=>Math.max(m,l.seq),0)+1;d.id='L'+Date.now()}
+  if(col)await col.doc(d.id).set(d);
+  else{const i=letters.findIndex(l=>l.id===d.id);i>=0?letters[i]=d:letters.push(d)}
+  sel=d.id;say('نامه ذخیره شد (ردیف '+fa(d.seq)+').');resetForm();say('نامه ذخیره شد.');render();
+ }catch(e){say('خطا در ذخیره: '+(e.message||e.code))}
+}
+$('save').onclick=save;$('reset').onclick=resetForm;
+$('bEdit').onclick=()=>{const l=get();if(!l)return;editId=l.id;['to','pos','no','att','body','from','date'].forEach(i=>$(i).value=l[i]||'');$('ftitle').textContent='ویرایش نامه ردیف '+fa(l.seq);$('formCard').scrollIntoView({behavior:'smooth'})};
+$('bDel').onclick=async()=>{const l=get();if(!l||!confirm('این نامه حذف شود؟'))return;try{if(col)await col.doc(l.id).delete();else letters=letters.filter(x=>x.id!==l.id);sel=null;render()}catch(e){say('خطا در حذف')}};
+$('bView').onclick=()=>{
+ const l=get();if(!l)return;
+ const body=/با سلام/.test(l.body)?l.body:'با سلام و احترام\n'+l.body;
+ $('sheet').innerHTML=`<div class="bis">بسمه تعالی</div>
+ <div class="meta">${l.no?`<div>شماره: ${esc(l.no)}</div>`:''}<div>تاریخ: ${esc(l.date)}</div>${l.att?`<div>پیوست: ${esc(l.att)}</div>`:''}</div>
+ <div class="to">${esc(l.to)}<br>${esc(l.pos)}</div>
+ <div class="body">${esc(body)}</div>
+ <div class="thx">سپاس فراوان</div>
+ <div class="snd">${esc(l.from)}</div>`;
+ $('view').classList.remove('hide');$('view').scrollIntoView({behavior:'smooth'});
+};
+async function makePdf(){
+ const c=await html2canvas($('sheet'),{scale:2,backgroundColor:'#fff',useCORS:true});
+ const w=210,h=c.height*w/c.width,img=c.toDataURL('image/jpeg',0.93);
+ const pdf=new window.jspdf.jsPDF('p','mm','a4');
+ pdf.addImage(img,'JPEG',0,0,w,h);
+ for(let left=h-297,y=0;left>1;left-=297){pdf.addPage();y-=297;pdf.addImage(img,'JPEG',0,y,w,h)}
+ return pdf.output('blob');
+}
+async function pdfAct(share){
+ const l=get();if(!l)return;const p=$('pmsg');
+ const name='نامه-'+l.seq+'.pdf';
+ try{
+  p.textContent='در حال ساخت PDF…';
+  const blob=await makePdf();
+  const file=new File([blob],name,{type:'application/pdf'});
+  if(share&&navigator.canShare&&navigator.canShare({files:[file]})){
+   await navigator.share({files:[file],title:'نامه اداری '+l.to});p.textContent='';return;
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  p.textContent='فایل PDF ذخیره شد.';
+ }catch(e){p.textContent=(e&&e.name==='AbortError')?'':'خطا: '+(e.message||e.code||'ناموفق')}
+}
+$('bShare').onclick=()=>pdfAct(true);
+$('bDl').onclick=()=>pdfAct(false);
+$('bClose').onclick=()=>$('view').classList.add('hide');
+$('bPrint').onclick=()=>{try{window.print()}catch(e){alert('چاپ در این محیط ممکن نیست؛ صفحه را در مرورگر باز کنید و Ctrl+P بزنید.')}};
+const KEY='official_letters_v1';
+try{letters=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){letters=[]}
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(letters))}catch(e){say('خطا در ذخیره‌سازی محلی')}};
+col={doc:id=>({set:async d=>{const i=letters.findIndex(x=>x.id===id);i>=0?letters[i]=d:letters.push(d);persist()},delete:async()=>{letters=letters.filter(x=>x.id!==id);persist()}})};
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+resetForm();render();
+</script></body></html>
